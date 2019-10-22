@@ -3,6 +3,10 @@
 - hosts: all
   gather_facts: false
   tasks:
+      #debugging what keys i have access to in awx
+    - name: output current available ssh keys
+      shell: "ssh-add -l"
+
     - name: create collections path
       file:
         dest: "{{ ansible_collections_path }}"
@@ -18,13 +22,13 @@
         force: True
 
     - name: template out the awx collection
-      shell:
-        free_form: 'ansible-playbook -i localhost, awx_collection/template_galaxy.yml -e package_name=awx -e namespace_name=awx -e package_version=0.0.1'
+      shell: 'ansible-playbook -i localhost, awx_collection/template_galaxy.yml -e package_name=awx -e namespace_name=awx -e package_version=0.0.1'
+      args:
         chdir: "{{ build_dir }}"
 
     - name: build the awx collection
-      shell:
-        free_form: 'ansible-galaxy collection build --force'
+      shell: 'ansible-galaxy collection build --force'
+      args:
         chdir: "{{ build_dir }}/awx_collection"
       register: build_stdout
 
@@ -33,8 +37,7 @@
         package_name: "awx-awx-0.0.1.tar.gz"
 
     - name: install the awx collection
-      shell:
-        free_form:  "ansible-galaxy collection install {{ build_dir }}/awx_collection/{{ package_name }} -p {{ ansible_collections_path }} --force"
+      shell:  "ansible-galaxy collection install {{ build_dir }}/awx_collection/{{ package_name }} -p {{ ansible_collections_path }} --force"
 
     - name: ensure the collection files are the right permissions
       file:

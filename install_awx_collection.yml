@@ -1,0 +1,44 @@
+---
+
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: create collections path
+      file:
+        dest: "{{ ansible_collections_path }}"
+        recurse: True
+        state: "directory"
+
+    - name: clone collection repo
+      git:
+        repo: "git@github.com:{{ fork }}/{{ product }}.git"
+        version: "{{ branch }}"
+        depth: 1
+        dest: "{{ build_dir }}"
+        force: True
+
+    - name: template out the awx collection
+      shell:
+        free_form: 'ansible-playbook -i localhost, awx_collection/template_galaxy.yml -e package_name=awx -e namespace_name=awx -e package_version=0.0.1'
+        chdir: "{{ build_dir }}"
+
+    - name: build the awx collection
+      shell:
+        free_form: 'ansible-galaxy collection build --force'
+        chdir: "{{ build_dir }}/awx_collection"
+      register: build_stdout
+
+    - name: register package name
+      set_fact:
+        package_name: "awx-awx-0.0.1.tar.gz"
+
+    - name: install the awx collection
+      shell:
+        free_form:  "ansible-galaxy collection install {{ build_dir }}/awx_collection/{{ package_name }} -p {{ ansible_collections_path }} --force"
+
+    - name: ensure the collection files are the right permissions
+      file:
+        dest: "{{ ansible_collections_path }}"
+        mode: "0755"
+        recurse: True
+        state: "directory"

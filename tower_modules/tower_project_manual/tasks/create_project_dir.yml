@@ -17,6 +17,7 @@
     inventory: localhost
     variables:
       ansible_connection: local
+      foo: bar
 
 - name: create an unused SSH / Machine credential
   tower_credential:
